@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Business Chat Prototype</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#111111; --muted:#6b6b6b; --line:#e2e2e2;
+    --accent:#db0011; --user:#f2f2f2;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei",Arial,sans-serif}
+  body{display:flex;justify-content:center;align-items:center;padding:24px 16px}
+  .phone{width:100%;max-width:420px;height:calc(100vh - 48px);max-height:860px;background:var(--bg);
+    border:1px solid var(--ink);border-radius:22px;display:flex;flex-direction:column;overflow:hidden}
+
+  /* Header */
+  header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+  .icon-btn{width:34px;height:34px;border:none;background:none;display:grid;place-items:center;cursor:pointer;color:var(--accent);border-radius:50%;flex-shrink:0}
+  .icon-btn:hover{background:#fdecee}
+  .h-title{flex:1;min-width:0}
+  .h-title b{display:block;font-size:15.5px;color:var(--accent);line-height:1.25}
+  .h-title span{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .dot{width:7px;height:7px;border-radius:50%;background:#1f9d55}
+
+  /* Messages */
+  main{flex:1;overflow-y:auto;padding:18px 16px 8px;scroll-behavior:smooth}
+  .day{text-align:center;font-size:11px;color:var(--muted);margin:0 0 14px}
+  .row{display:flex;gap:8px;margin:0 0 12px;align-items:flex-end;animation:pop .22s ease-out}
+  .row.user{justify-content:flex-end}
+  .row.user > div{display:flex;flex-direction:column;align-items:flex-end;max-width:78%}
+  .avatar{width:28px;height:28px;border-radius:50%;border:1px solid var(--ink);display:grid;place-items:center;flex-shrink:0}
+  .bubble{max-width:78%;padding:10px 13px;font-size:14.5px;line-height:1.45;border-radius:16px;word-wrap:break-word;white-space:pre-wrap}
+  .user .bubble{max-width:100%}
+  .bot .bubble{background:#fff;border:1px solid var(--ink);border-bottom-left-radius:4px}
+  .user .bubble{background:var(--user);border:1px solid var(--user);border-bottom-right-radius:4px}
+  .user .bubble.photo{padding:4px;background:#fff;border:1px solid var(--line)}
+  .bubble.photo img{display:block;max-width:220px;width:100%;border-radius:12px}
+  .meta{font-size:10.5px;color:var(--muted);margin-top:4px}
+  .user .meta{text-align:right}
+  .addr{display:block;margin:8px 0;padding:8px 10px;border-left:3px solid var(--accent);background:#fafafa;border-radius:6px;font-weight:600}
+  .card{border:1px solid var(--ink);border-radius:12px;padding:12px;margin-top:2px;font-size:13.5px;background:#fff}
+  .card .t{font-weight:700;margin-bottom:8px}
+  .card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px}
+  .card dt{color:var(--muted)} .card dd{margin:0}
+  .scan{display:flex;flex-direction:column;gap:8px;min-width:200px}
+  .bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--accent);animation:fill 1.8s ease-out forwards}
+  @keyframes fill{to{width:100%}}
+  .typing .bubble{display:flex;gap:4px;padding:13px 14px}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--ink);opacity:.3;animation:blink 1s infinite}
+  .typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
+  @keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:.9}}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Composer */
+  footer{border-top:1px solid var(--line);padding:10px 12px 14px;display:flex;gap:8px;align-items:center}
+  footer input[type=text]{flex:1;min-width:0;border:1px solid var(--ink);border-radius:999px;padding:11px 16px;font-size:14.5px;outline:none;font-family:inherit;color:var(--ink);background:#fff}
+  footer input:disabled{background:#fafafa}
+  .send,.attach{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;cursor:pointer;flex-shrink:0}
+  .send{border:none;background:var(--accent);color:#fff}
+  .attach{border:1.5px solid var(--accent);background:#fff;color:var(--accent)}
+  .attach:hover{background:#fdecee}
+  .send:disabled,.attach:disabled{opacity:.4;cursor:default}
+  .note{font-size:10.5px;color:var(--muted);text-align:center;padding:0 0 8px}
+
+  @media (max-width:480px){
+    body{padding:12px}
+    .phone{height:calc(100vh - 24px)}
+  }
+</style>
+</head>
+<body>
+<div class="phone">
+  <header>
+    <button class="icon-btn" aria-label="Back">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4"/><path d="M10 6l-6 6 6 6"/></svg>
+    </button>
+    <div class="h-title">
+      <b>Business Express Virtual Assistant</b>
+      <span><i class="dot"></i>Online · replies instantly</span>
+    </div>
+  </header>
+
+  <main id="chat" aria-live="polite"></main>
+
+  <div class="note">Prototype · demo data only</div>
+  <footer>
+    <button class="attach" id="attach" aria-label="Upload a photo" title="Upload a photo">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+    </button>
+    <input id="file" type="file" accept="image/*" hidden>
+    <input id="msg" type="text" placeholder="Type a message…" autocomplete="off" aria-label="Message">
+    <button class="send" id="send" aria-label="Send">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg>
+    </button>
+  </footer>
+</div>
+
+<script>
+/* ---------- Demo data (edit here) ---------- */
+const DISPATCH_DATE = "29 October 2026";
+const ADDRESS_EN = "Room 1802, Unit 2, Building 7, Phase 3, Zhonghai Huating, 1688 Wenyi West Road, Yuhang District, Hangzhou, Zhejiang, 311121";
+/* The "OCR" result: whatever photo is uploaded, the demo reads this address from it */
+const OCR_RESULT_CN = "浙江省杭州市余杭区文一西路1688号中海华庭三期7幢2单元1802室";
+
+/* Demo mode: pressing Send with an empty box sends the next customer line from the script.
+   At the address step it uploads a sample photo instead. */
+const DEMO_SCRIPT = {
+  menu:          "Hi, I requested a security device from you over a week ago, and I still haven't received it. Can you check what's going on?",
+  j1_dispatched: "这太离谱了吧，到现在什么都没收到，你们到底有没有寄对地址？",
+  j1_confirm_en: "Yes, that's the right address. But I still didn't get it.",
+  j1_await_cn:   "__PHOTO__",
+  j1_confirm_cn: "Yes, that's exactly right.",
+  j1_done:       "nice thanks",
+  anything_else: "No, that's all"
+};
+
+/* ---------- UI helpers ---------- */
+const chat = document.getElementById('chat');
+const input = document.getElementById('msg');
+const sendBtn = document.getElementById('send');
+const attachBtn = document.getElementById('attach');
+const fileInput = document.getElementById('file');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const now = () => new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const scroll = () => { chat.scrollTop = chat.scrollHeight; };
+let busy = false;
+
+const BOT_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h16v11H9l-5 4z"/></svg>';
+
+function addRow(who, html, cls = ''){
+  const row = document.createElement('div');
+  row.className = 'row ' + who;
+  row.innerHTML = (who === 'bot' ? `<div class="avatar">${BOT_ICON}</div>` : '') +
+    `<div><div class="bubble ${cls}">${html}</div><div class="meta">${now()}${who==='user'?' · Read':''}</div></div>`;
+  chat.appendChild(row);
+  row.querySelectorAll('img').forEach(i => i.onload = scroll);
+  scroll();
+  return row;
+}
+function setBusy(b){
+  busy = b; input.disabled = b; sendBtn.disabled = b; attachBtn.disabled = b;
+  if(!b) input.focus();
+}
+
+async function say(html, {plainLen, wait} = {}){
+  const t = document.createElement('div');
+  t.className = 'row bot typing';
+  t.innerHTML = `<div class="avatar">${BOT_ICON}</div><div class="bubble"><i></i><i></i><i></i></div>`;
+  chat.appendChild(t); scroll();
+  const len = plainLen ?? html.replace(/<[^>]+>/g,'').length;
+  await sleep(wait ?? Math.min(450 + len * 11, 1900));
+  t.remove(); return addRow('bot', html);
+}
+async function bot(lines){
+  setBusy(true);
+  for (const l of lines) await say(l);
+  setBusy(false);
+}
+
+/* ---------- Language understanding ---------- */
+const norm = s => s.toLowerCase().replace(/[’']/g,"'").replace(/[.,!?;:~，。！？、…]+/g,' ').replace(/\s+/g,' ').trim();
+const hasCJK = s => /[一-鿿]/.test(s);
+
+const POS_EN = ["yes","yeah","yea","yep","yup","ya","yas","sure","ok","okay","k","kk","correct","right","exactly","absolutely","definitely","of course","sounds good","perfect","great","nice","cool","awesome","thanks","thank you","thx","ty","cheers","affirmative","confirm","confirmed","that's right","thats right","that's it","indeed","certainly","go ahead","please do","👍","✅"];
+const POS_CN = ["是","是的","对","对的","没错","好","好的","可以","嗯","正确","行","谢谢","多谢","对啊","确认"];
+const NEG_EN = ["no","nope","nah","not","wrong","incorrect","negative","never","nothing","nothing else","don't","dont","no thanks","that's all","thats all","i'm good","im good","all good","i'm fine","im fine","👎","❌"];
+const NEG_CN = ["不","不是","不对","错","错了","没有了","不用","不用了","算了","没了","不需要"];
+
+function hasPhrase(t, list){
+  return list.some(p => /^[a-z' ]+$/.test(p)
+    ? new RegExp(`(^|\\s)${p}(\\s|$)`).test(t)
+    : t.includes(p));
+}
+const isNeg = t => hasPhrase(t, NEG_EN) || hasPhrase(t, NEG_CN);
+const isPos = t => !isNeg(t) && (hasPhrase(t, POS_EN) || hasPhrase(t, POS_CN));
+const isThanks = t => /(thank|thx|\bty\b|cheers|谢谢|多谢|nice|great|awesome|perfect)/.test(t);
+const isSecurityIntent = t =>
+  /(security device|secure ?key|token|device|haven't received|not received|didn't receive|never (got|received)|保安|编码器|安全装置|装置|没收到|还没收到|没有收到|还没到)/.test(t);
+const isGreeting = t => /^(hi|hello|hey|hiya|yo|morning|good (morning|afternoon|evening)|你好|您好|嗨|哈喽)( there)?$/.test(t);
+
+/* Pull the Chinese address out of e.g. "Ohhhh ok my address is 浙江省…" */
+function extractCN(raw){
+  const i = raw.search(/[一-鿿]/);
+  return i < 0 ? '' : raw.slice(i).replace(/^(我的地址是|地址是|地址[:：]?)/,'').trim();
+}
+
+/* ---------- Conversation state machine ---------- */
+let state = 'menu';
+let cnAddress = '';
+
+async function welcome(){
+  chat.innerHTML = '<div class="day">Today</div>';
+  state = 'menu';
+  await bot([
+    "Hi there, welcome to Business Express Virtual Assistant!",
+    "I'm here to make your banking day a little easier. How can I help you today?"
+  ]);
+}
+
+async function askAnythingElse(lead){
+  state = 'anything_else';
+  await bot([lead ? lead + " Is there anything else I can help you with?" : "Is there anything else I can help you with today? 😊"]);
+}
+
+function handleUser(text){
+  if (busy) return;
+  text = text.trim() || DEMO_SCRIPT[state] || '';
+  if (!text) return;
+  if (text === '__PHOTO__') { input.value = ''; return handlePhoto(makeSamplePhoto()); }
+  addRow('user', esc(text));
+  input.value = '';
+  route(text);
+}
+
+async function route(raw){
+  const t = norm(raw);
+
+  switch (state) {
+
+    /* ----- Journey 1: security device not received ----- */
+    case 'j1_dispatched':
+      state = 'j1_confirm_en';
+      return bot([
+        "I completely understand your frustration, and I'm sorry about this — let's sort it out together.",
+        `First, let me read the address back to you so you can verify it. The device was sent to:<span class="addr">${ADDRESS_EN}</span>Does that match your correct address?`
+      ]);
+
+    case 'j1_confirm_en':
+      if (isNeg(t)) {
+        state = 'j1_await_cn';
+        return bot(["Ah, good thing we checked! No worries at all.",
+          "Please give me your correct address in Chinese — you can type it here, or tap the camera button next to the message box to upload a photo of a document showing it, like a utility bill or a delivery label, and I'll read it for you."]);
+      }
+      if (isPos(t)) {
+        state = 'j1_await_cn';
+        return bot([
+          "Thank you for confirming! The address on file is complete and correct.",
+          "That said, English-style addresses can sometimes be harder for local delivery to handle in mainland China — so you can provide us with your address in Chinese. Simply type it here, or tap the camera button next to the message box to upload a photo of a document showing your Chinese address, like a utility bill or a delivery label, and I'll read it for you. Then I'll update your details and get your security device re-sent."
+        ]);
+      }
+      return bot(["Just to double-check — does the address I read out match yours? A simple yes or no works!"]);
+
+    case 'j1_await_cn':
+      if (hasCJK(raw) && extractCN(raw).length >= 6) return confirmCN(extractCN(raw), 'typed');
+      if (isNeg(t)) return askAnythingElse("No problem — you can come back any time to update it.");
+      return bot(["Hmm, I didn't spot a Chinese address there. You can type it in Chinese characters (for example 浙江省杭州市余杭区…), or tap the camera button to upload a photo of it."]);
+
+    case 'j1_confirm_cn':
+      if (isNeg(t)) {
+        state = 'j1_await_cn';
+        return bot(["Oops, let's fix that! Please type your Chinese address again, or upload a clearer photo, and I'll check it once more."]);
+      }
+      if (isPos(t)) return submitRequest();
+      return bot(["Just need a quick yes or no — is that Chinese address correct?"]);
+
+    case 'j1_done':
+      if (isPos(t) || isThanks(t)) return askAnythingElse("Anytime! 😊");
+      state = 'menu';
+      return route(raw);
+
+    /* ----- End of journey ----- */
+    case 'anything_else':
+      if (isNeg(t)) {
+        state = 'ended';
+        return bot(["Thanks for chatting with me today. Have a fantastic day — bye for now!"]);
+      }
+      if (isPos(t) && !isSecurityIntent(t)) {
+        state = 'menu';
+        return bot(["Awesome! What can I help you with?"]);
+      }
+      state = 'menu';
+      return route(raw);
+
+    case 'ended':
+      state = 'menu';
+      return route(raw);
+
+    /* ----- Menu / intent detection ----- */
+    case 'menu':
+    default:
+      if (isSecurityIntent(t)) return startJourney1();
+      if (isGreeting(t)) return bot(["Hello hello! What can I do for you today?"]);
+      if (isNeg(t)) { state = 'anything_else'; return route(raw); }
+      return bot(["Hmm, I'm not quite sure I caught that. Could you tell me a bit more? For example, I can check on a security device delivery for you."]);
+  }
+}
+
+async function startJourney1(){
+  state = 'j1_dispatched';
+  await bot([
+    "Hello! I'm sorry to hear your security device hasn't arrived. Let me look into this for you right away.",
+    `I can see here that your security device was dispatched on <b>${DISPATCH_DATE}</b> to the address we have on file. The tracking shows it was sent out successfully.`
+  ]);
+}
+
+async function submitRequest(){
+  state = 'j1_done';
+  setBusy(true);
+  await say("Perfect! I've updated your address on file.");
+  await say("I'll now help you submit a new request for the security device…");
+  const ref = 'SD-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random()*900000);
+  await say(`<div class="card"><div class="t">Security device request submitted</div><dl>
+    <dt>Reference</dt><dd>${ref}</dd>
+    <dt>Deliver to</dt><dd>${esc(cnAddress)}</dd>
+    <dt>Status</dt><dd>Request received</dd></dl></div>`, {plainLen: 60});
+  await say("It should be delivered without any issues this time.");
+  setBusy(false);
+}
+
+/* ---------- Photo upload + mock OCR ---------- */
+async function handlePhoto(src){
+  if (busy) return;
+  addRow('user', `<img src="${src}" alt="Uploaded photo">`, 'photo');
+
+  if (state !== 'j1_await_cn') {
+    return bot(["Thanks for the photo! At the moment I can only read photos when you're updating your delivery address."]);
+  }
+
+  setBusy(true);
+  await say("Got it, thanks! Give me a moment while I scan your photo…");
+  const scanRow = addRow('bot', `<div class="scan"><span>Reading address from photo…</span><div class="bar"><i></i></div></div>`);
+  await sleep(2000);
+  scanRow.remove();
+
+  setBusy(false);
+  await confirmCN(OCR_RESULT_CN, 'photo');
+}
+
+/* Shared confirmation for typed or scanned Chinese addresses */
+async function confirmCN(addr, source){
+  cnAddress = addr;
+  state = 'j1_confirm_cn';
+  const lead = source === 'photo' ? 'the Chinese address I read from your photo is' : 'the Chinese address you provided is';
+  await bot([`Thank you! Let me confirm — ${lead}:<span class="addr">${esc(cnAddress)}</span>which corresponds to:<span class="addr">${ADDRESS_EN}</span>Is that correct?`]);
+}
+
+/* Sample "delivery label" photo used when Send is pressed with an empty box */
+function makeSamplePhoto(){
+  const c = document.createElement('canvas');
+  c.width = 640; c.height = 400;
+  const g = c.getContext('2d');
+  g.fillStyle = '#d9d4cb'; g.fillRect(0, 0, 640, 400);            // desk
+  g.save(); g.translate(320, 200); g.rotate(-0.035);
+  g.fillStyle = '#ffffff'; g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 18;
+  g.fillRect(-270, -160, 540, 320);                                // paper
+  g.shadowBlur = 0;
+  g.fillStyle = '#111'; g.font = 'bold 30px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillText('收件信息', -240, -105);
+  g.fillRect(-240, -90, 480, 2);
+  g.font = '22px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillStyle = '#555'; g.fillText('收件地址：', -240, -45);
+  g.fillStyle = '#111'; g.font = 'bold 25px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillText('浙江省杭州市余杭区文一西路1688号', -240, 0);
+  g.fillText('中海华庭三期7幢2单元1802室', -240, 42);
+  g.font = '22px "PingFang SC","Microsoft YaHei",sans-serif';
+  g.fillStyle = '#555'; g.fillText('邮政编码：311121', -240, 100);
+  g.restore();
+  return c.toDataURL('image/jpeg', 0.9);
+}
+
+/* ---------- Wiring ---------- */
+sendBtn.onclick = () => handleUser(input.value);
+input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) handleUser(input.value); });
+attachBtn.onclick = () => { if (!busy) fileInput.click(); };
+fileInput.onchange = () => {
+  const f = fileInput.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => handlePhoto(r.result);
+  r.readAsDataURL(f);
+  fileInput.value = '';
+};
+welcome();
+</script>
+</body>
+</html>
