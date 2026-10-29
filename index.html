@@ -80,7 +80,7 @@
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12H4"/><path d="M10 6l-6 6 6 6"/></svg>
     </button>
     <div class="h-title">
-      <b>Business Express Virtual Assistant</b>
+      <b>Chat with Baymax</b>
       <span><i class="dot"></i>Online · replies instantly</span>
     </div>
   </header>
@@ -105,7 +105,7 @@
 const DISPATCH_DATE = "29 October 2026";
 const ADDRESS_EN = "Room 1802, Unit 2, Building 7, Phase 3, Zhonghai Huating, 1688 Wenyi West Road, Yuhang District, Hangzhou, Zhejiang, 311121";
 /* The "OCR" result: whatever photo is uploaded, the demo reads this address from it */
-const OCR_RESULT_CN = "浙江省杭州市余杭区文一西路1688号中海华庭三期7幢2单元1802室";
+const OCR_RESULT_CN = "浙江省杭州市余杭区文一西路1688号中海华庭三期7幢2单元1802室（邮政编号：311121）";
 
 /* Demo mode: pressing Send with an empty box sends the next customer line from the script.
    At the address step it uploads a sample photo instead. */
@@ -198,7 +198,7 @@ async function welcome(){
   chat.innerHTML = '<div class="day">Today</div>';
   state = 'menu';
   await bot([
-    "Hi there, welcome to Business Express Virtual Assistant!",
+    "Hi there, welcome to Chat with Baymax!",
     "I'm here to make your banking day a little easier. How can I help you today?"
   ]);
 }
